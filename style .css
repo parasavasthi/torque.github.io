@@ -1,0 +1,148 @@
+/* Torque A: temporary test controller. Mobile-first, dark, minimal. */
+
+:root {
+  --bg: #0f1724;
+  --card: #17212f;
+  --line: #243247;
+  --field: #0f1724;
+  --text: #e6edf6;
+  --muted: #8a9bb3;
+  --accent: #4da3ff;
+  --ok: #3ecf8e;
+  --bad: #e5484d;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.head { text-align: center; padding-top: 6px; }
+.head h1 { margin: 0; font-size: 1.8rem; letter-spacing: 0.18em; }
+.head p { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); letter-spacing: 0.08em; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+form label:not(:first-child) { margin-top: 12px; }
+
+input[type="text"], input[type="password"] {
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 16px;               /* 16px stops iOS zooming on focus */
+  color: var(--text);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+input:disabled { opacity: 0.6; }
+
+button { font: inherit; color: var(--text); cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pw { display: flex; gap: 8px; }
+.ghost {
+  flex: none;
+  width: 72px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.note { margin: 8px 0 0; font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+.note.center { text-align: center; margin-top: 14px; }
+
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.primary {
+  height: 46px;
+  padding: 0 22px;
+  font-weight: 600;
+  color: #06101d;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+}
+.primary:disabled { opacity: 0.6; }
+
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--bad); }
+.status .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.status[data-state="connected"] { color: var(--ok); }
+
+.message { margin: 10px 0 0; min-height: 1.2em; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.message.error { color: var(--bad); }
+
+/* ---------- Direction pad ---------- */
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 84px);
+  gap: 10px;
+  max-width: 340px;
+  margin: 0 auto;
+}
+.pad-f { grid-area: 1 / 2; }
+.pad-l { grid-area: 2 / 1; }
+.pad-s { grid-area: 2 / 2; }
+.pad-r { grid-area: 2 / 3; }
+.pad-b { grid-area: 3 / 2; }
+
+.pad button {
+  border-radius: 12px;
+  /* No text selection, long-press menu or scrolling while holding */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.dir { font-size: 2rem; background: #1e2b3d; border: 1px solid var(--line); }
+.dir.is-active { background: var(--accent); border-color: var(--accent); color: #06101d; }
+.stop {
+  background: var(--bad);
+  border: 1px solid var(--bad);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #fff;
+}
+.stop:active { filter: brightness(0.85); }
+.pad button:disabled { opacity: 0.4; }
+
+/* ---------- Speed ---------- */
+.speed { display: flex; align-items: center; gap: 14px; }
+.speed input[type="range"] { flex: 1; height: 40px; margin: 0; accent-color: var(--accent); touch-action: pan-y; }
+.speed output { flex: none; min-width: 3.2ch; text-align: right; font-size: 1.4rem; font-weight: 700; }
+
+@media (min-width: 700px) {
+  .app { padding-top: 32px; }
+  .pad { grid-template-rows: repeat(3, 92px); }
+}
