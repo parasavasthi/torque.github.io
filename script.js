@@ -6,7 +6,7 @@
    every failed request is reported with its real error.
 
    Endpoints used (ESP8266 firmware):
-     /move?move=F|B|L|R|S     /speed?value=0..1023     /status
+     /move?move=F|B|L|R|GL|GR|S     /speed?value=0..1023     /status
 
    SAFETY MODEL
     - A direction is only sent while its button/key is held.
@@ -51,7 +51,7 @@ const el = {
   speed: $("speed"),
   speedValue: $("speedValue"),
 };
-const dirButtons = Array.from(el.pad.querySelectorAll("[data-move]"));
+const dirButtons = Array.from(document.querySelectorAll("[data-move]"));
 
 /* ---------- State ---------- */
 let baseUrl = null;        // e.g. "http://192.168.4.1" (null while disconnected)
@@ -325,6 +325,7 @@ const KEY_MAP = {
   arrowdown: "B", s: "B",
   arrowleft: "L", a: "L",
   arrowright: "R", d: "R",
+  q: "GL", e: "GR",
 };
 
 function typingInField(e) {
