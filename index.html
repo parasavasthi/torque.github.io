@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="style .css">
 </head>
 <body>
+  <!-- TEMPORARY TEST INTERFACE: not the official Torque Team website. -->
   <main class="app">
 
     <header class="head">
@@ -15,6 +16,7 @@
       <p>Temporary test controller</p>
     </header>
 
+    <!-- ===== Connection ===== -->
     <section class="card" aria-label="Connection">
       <form id="connectForm" autocomplete="off" novalidate>
         <label for="ip">IP address</label>
@@ -43,6 +45,7 @@
       </form>
     </section>
 
+    <!-- ===== Movement ===== -->
     <section class="card" aria-label="Movement controls">
       <div class="pad" id="pad">
         <button type="button" class="dir pad-f" data-move="F" aria-label="Forward" disabled>&uarr;</button>
@@ -51,15 +54,14 @@
         <button type="button" class="dir pad-r" data-move="R" aria-label="Right" disabled>&rarr;</button>
         <button type="button" class="dir pad-b" data-move="B" aria-label="Backward" disabled>&darr;</button>
       </div>
-
       <div class="gturns" aria-label="Spin turns">
         <button type="button" class="dir gturn" data-move="GL" aria-label="Spin left" disabled>Spin Left</button>
         <button type="button" class="dir gturn" data-move="GR" aria-label="Spin right" disabled>Spin Right</button>
       </div>
-
       <p class="note center">Hold to move, release to stop. Spin buttons turn in place. Keys: arrows / WASD, Q/E = spin, Space = STOP.</p>
     </section>
 
+    <!-- ===== Speed ===== -->
     <section class="card" aria-label="Speed control">
       <label for="speed">Speed (PWM)</label>
       <div class="speed">
