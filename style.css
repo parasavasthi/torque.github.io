@@ -58,7 +58,7 @@ input[type="text"], input[type="password"] {
   height: 46px;
   padding: 0 12px;
   font: inherit;
-  font-size: 16px;               /* 16px stops iOS zooming on focus */
+  font-size: 16px;
   color: var(--text);
   background: var(--field);
   border: 1px solid var(--line);
@@ -102,7 +102,7 @@ button:disabled { cursor: not-allowed; }
 .message { margin: 10px 0 0; min-height: 1.2em; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
 .message.error { color: var(--bad); }
 
-/* ---------- Direction pad ---------- */
+/* Direction pad */
 .pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -119,7 +119,6 @@ button:disabled { cursor: not-allowed; }
 
 .pad button {
   border-radius: 12px;
-  /* No text selection, long-press menu or scrolling while holding */
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -137,7 +136,21 @@ button:disabled { cursor: not-allowed; }
 .stop:active { filter: brightness(0.85); }
 .pad button:disabled { opacity: 0.4; }
 
-/* ---------- Speed ---------- */
+/* Separate spin-turn controls */
+.gturns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 340px;
+  margin: 12px auto 0;
+}
+.gturn {
+  min-height: 48px;
+  padding: 8px;
+  font-size: 0.95rem;
+}
+
+/* Speed */
 .speed { display: flex; align-items: center; gap: 14px; }
 .speed input[type="range"] { flex: 1; height: 40px; margin: 0; accent-color: var(--accent); touch-action: pan-y; }
 .speed output { flex: none; min-width: 3.2ch; text-align: right; font-size: 1.4rem; font-weight: 700; }
