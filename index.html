@@ -1,77 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f1724">
-  <title>Torque A Controller</title>
-  <link rel="stylesheet" href="style .css">
+  <meta name="theme-color" content="#11191d">
+  <title>College RC Car Controller</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
-  <!-- TEMPORARY TEST INTERFACE: not the official Torque Team website. -->
-  <main class="app">
-
-    <header class="head">
-      <h1>TORQUE A</h1>
-      <p>Temporary test controller</p>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand-icon" aria-hidden="true">RC</div>
+      <div class="brand-copy">
+        <p class="eyebrow">ESP8266 · L298N</p>
+        <h1>College RC Car</h1>
+      </div>
+      <div class="link-status" id="linkStatus" role="status" aria-live="polite">
+        <span class="status-dot"></span><span id="statusText">Ready</span>
+      </div>
     </header>
 
-    <!-- ===== Connection ===== -->
-    <section class="card" aria-label="Connection">
-      <form id="connectForm" autocomplete="off" novalidate>
-        <label for="ip">IP address</label>
-        <input id="ip" type="text" inputmode="decimal" value="192.168.4.1"
-               spellcheck="false" autocapitalize="off" autocorrect="off">
-
-        <label for="password">Password</label>
-        <div class="pw">
-          <input id="password" type="password" autocomplete="off"
-                 spellcheck="false" autocapitalize="off" autocorrect="off">
-          <button type="button" id="togglePw" class="ghost" aria-pressed="false">Show</button>
-        </div>
-        <p class="note">
-          Not sent anywhere. The robot firmware has no login, so join the
-          <strong>Torque_A</strong> Wi-Fi in your device's Wi-Fi settings instead.
-        </p>
-
-        <div class="row">
-          <button type="submit" id="connectBtn" class="primary">Connect</button>
-          <span class="status" id="status" data-state="disconnected">
-            <span class="dot" aria-hidden="true"></span>
-            <span id="statusText">Disconnected</span>
-          </span>
-        </div>
-        <p id="message" class="message" role="status" aria-live="polite"></p>
-      </form>
+    <section class="panel connection" aria-labelledby="connectionHeading">
+      <div class="section-head">
+        <div><p class="eyebrow">01 / CONNECTION</p><h2 id="connectionHeading">Car Wi-Fi address</h2></div>
+        <button class="quiet-button" id="saveAddress" type="button">Save & stop</button>
+      </div>
+      <label for="carAddress">ESP8266 address</label>
+      <div class="address-field">
+        <span>http://</span>
+        <input id="carAddress" type="text" value="192.168.4.1" inputmode="url" autocomplete="url" spellcheck="false" aria-describedby="connectionHint">
+      </div>
+      <p class="hint" id="connectionHint">Connect your phone to the car’s Wi-Fi, then use its IP address. The sketch’s default is 192.168.4.1.</p>
     </section>
 
-    <!-- ===== Movement ===== -->
-    <section class="card" aria-label="Movement controls">
-      <div class="pad" id="pad">
-        <button type="button" class="dir pad-f" data-move="F" aria-label="Forward" disabled>&uarr;</button>
-        <button type="button" class="dir pad-l" data-move="L" aria-label="Left" disabled>&larr;</button>
-        <button type="button" class="stop pad-s" id="stopBtn" aria-label="Stop" disabled>STOP</button>
-        <button type="button" class="dir pad-r" data-move="R" aria-label="Right" disabled>&rarr;</button>
-        <button type="button" class="dir pad-b" data-move="B" aria-label="Backward" disabled>&darr;</button>
+    <section class="panel drive" aria-labelledby="driveHeading">
+      <div class="section-head drive-head">
+        <div><p class="eyebrow">02 / NORMAL MOVEMENT</p><h2 id="driveHeading">Hold to drive · release to stop</h2></div>
+        <span class="live-tag"><i></i> MOMENTARY</span>
       </div>
-      <div class="gturns" aria-label="Spin turns">
-        <button type="button" class="dir gturn" data-move="GL" aria-label="Spin left" disabled>Spin Left</button>
-        <button type="button" class="dir gturn" data-move="GR" aria-label="Spin right" disabled>Spin Right</button>
+
+      <div class="drive-pad" aria-label="Normal movement controls">
+        <span class="empty" aria-hidden="true"></span>
+        <button class="drive-key" data-key="f" type="button" aria-label="Forward">↑</button>
+        <span class="empty" aria-hidden="true"></span>
+        <button class="drive-key turn-key" data-key="r" type="button" aria-label="Circular turn left"><span>←</span><small>ARC LEFT</small></button>
+        <button class="stop-key" id="stop" type="button" aria-label="Stop"><span>■</span><small>STOP</small></button>
+        <button class="drive-key turn-key" data-key="l" type="button" aria-label="Circular turn right"><span>→</span><small>ARC RIGHT</small></button>
+        <span class="empty" aria-hidden="true"></span>
+        <button class="drive-key" data-key="b" type="button" aria-label="Backward">↓</button>
+        <span class="empty" aria-hidden="true"></span>
       </div>
-      <p class="note center">Hold to move, release to stop. Spin buttons turn in place. Keys: arrows / WASD, Q/E = spin, Space = STOP.</p>
+      <p class="key-note">Left and right are rolling circular turns, not spins in place.</p>
     </section>
 
-    <!-- ===== Speed ===== -->
-    <section class="card" aria-label="Speed control">
-      <label for="speed">Speed (PWM)</label>
-      <div class="speed">
-        <input id="speed" type="range" min="0" max="1023" step="1" value="400" disabled>
-        <output id="speedValue" for="speed">400</output>
+    <section class="panel gturn-panel" aria-labelledby="gturnHeading">
+      <div class="section-head">
+        <div><p class="eyebrow">03 / IN-PLACE SPIN</p><h2 id="gturnHeading">360° G-turn</h2></div>
+        <span class="spin-mark" aria-hidden="true">⟳</span>
+      </div>
+      <div class="gturn-row">
+        <button class="gturn-key" data-key="gl" type="button"><span>↺</span><span>G-Left<small>Spin left in place</small></span></button>
+        <button class="gturn-key" data-key="gr" type="button"><span>↻</span><span>G-Right<small>Spin right in place</small></span></button>
       </div>
     </section>
 
+    <section class="panel speed-panel" aria-labelledby="speedHeading">
+      <div class="section-head">
+        <div><p class="eyebrow">04 / MOTOR POWER</p><h2 id="speedHeading">Speed</h2></div>
+        <output id="speedValue" for="speed">700</output>
+      </div>
+      <input id="speed" type="range" min="0" max="1023" value="700" aria-label="Motor speed">
+      <div class="range-labels"><span>0 · stop</span><span>1023 · max</span></div>
+      <p class="hint">Changing speed while a direction is held updates both motors.</p>
+    </section>
+
+    <footer><span class="footer-dot"></span> Hold a control while the wheels are off the ground for the first check.</footer>
   </main>
-
-  <script src="script .js"></script>
 </body>
 </html>
