@@ -1,161 +1,161 @@
-/* Torque A: temporary test controller. Mobile-first, dark, minimal. */
+(() => {
+  'use strict';
 
-:root {
-  --bg: #0f1724;
-  --card: #17212f;
-  --line: #243247;
-  --field: #0f1724;
-  --text: #e6edf6;
-  --muted: #8a9bb3;
-  --accent: #4da3ff;
-  --ok: #3ecf8e;
-  --bad: #e5484d;
-}
+  const addressInput = document.querySelector('#carAddress');
+  const status = document.querySelector('#linkStatus');
+  const statusText = document.querySelector('#statusText');
+  const speedInput = document.querySelector('#speed');
+  const speedValue = document.querySelector('#speedValue');
+  const driveButtons = [...document.querySelectorAll('[data-key]')];
+  let activeKey = '';
+  let activePointerId = null;
+  let heartbeat = 0;
+  let requestInFlight = false;
+  let requestQueue = Promise.resolve();
 
-* { box-sizing: border-box; }
+  addressInput.value = localStorage.getItem('rcCarAddress') || '192.168.4.1';
 
-html, body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-text-size-adjust: 100%;
-}
+  function setStatus(message, ready = false) {
+    statusText.textContent = message;
+    status.classList.toggle('is-ready', ready);
+  }
 
-.app {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+  function baseUrl() {
+    const host = addressInput.value.trim().replace(/^https?:\/\//i, '').replace(/\/$/, '');
+    if (!host || !/^[a-z\d.-]+(?::\d{1,5})?$/i.test(host)) {
+      throw new Error('Enter a valid ESP8266 IP address.');
+    }
+    return `http://${host}`;
+  }
 
-.head { text-align: center; padding-top: 6px; }
-.head h1 { margin: 0; font-size: 1.8rem; letter-spacing: 0.18em; }
-.head p { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); letter-spacing: 0.08em; }
+  function sendCommand(key = activeKey, keepalive = false) {
+    let root;
+    try {
+      root = baseUrl();
+    } catch (error) {
+      setStatus(error.message);
+      return Promise.resolve();
+    }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 16px;
-}
+    const query = new URLSearchParams({ key, speed: speedInput.value, _: String(Date.now()) });
+    const url = `${root}/drive?${query.toString()}`;
+    const performRequest = () => {
+      requestInFlight = true;
+      return fetch(url, {
+        method: 'GET',
+        mode: 'no-cors',
+        cache: 'no-store',
+        keepalive
+      })
+        .then(() => setStatus(key ? `Sending “${key}” · speed ${speedInput.value}` : 'Stop sent', true))
+        .catch(() => setStatus('Car not reached · check Wi-Fi and address'))
+        .finally(() => { requestInFlight = false; });
+    };
 
-label {
-  display: block;
-  margin: 0 0 6px;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-form label:not(:first-child) { margin-top: 12px; }
+    // Send one request at a time so a late movement command cannot follow STOP.
+    const pending = requestQueue.then(performRequest, performRequest);
+    requestQueue = pending.catch(() => {});
+    return pending;
+  }
 
-input[type="text"], input[type="password"] {
-  width: 100%;
-  height: 46px;
-  padding: 0 12px;
-  font: inherit;
-  font-size: 16px;
-  color: var(--text);
-  background: var(--field);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-input:disabled { opacity: 0.6; }
+  function stopMovement() {
+    clearInterval(heartbeat);
+    heartbeat = 0;
+    activeKey = '';
+    activePointerId = null;
+    driveButtons.forEach(button => button.classList.remove('is-held'));
+    return sendCommand('');
+  }
 
-button { font: inherit; color: var(--text); cursor: pointer; }
-button:disabled { cursor: not-allowed; }
+  function startMovement(key, button, pointerId) {
+    if (activeKey === key && activePointerId === pointerId) return;
+    clearInterval(heartbeat);
+    activeKey = key;
+    activePointerId = pointerId;
+    driveButtons.forEach(item => item.classList.toggle('is-held', item === button));
+    sendCommand(key);
 
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    // The sketch's failsafe is 600 ms; refresh a held command every 200 ms.
+    heartbeat = setInterval(() => {
+      if (activeKey && !requestInFlight) sendCommand(activeKey);
+    }, 200);
+  }
 
-.pw { display: flex; gap: 8px; }
-.ghost {
-  flex: none;
-  width: 72px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
+  driveButtons.forEach(button => {
+    button.addEventListener('pointerdown', event => {
+      if (event.button !== undefined && event.button !== 0) return;
+      event.preventDefault();
+      button.setPointerCapture?.(event.pointerId);
+      startMovement(button.dataset.key, button, event.pointerId);
+    });
+    const releasePointer = event => {
+      if (activePointerId === event.pointerId) stopMovement();
+    };
+    button.addEventListener('pointerup', releasePointer);
+    button.addEventListener('pointercancel', releasePointer);
+    button.addEventListener('lostpointercapture', releasePointer);
+    button.addEventListener('contextmenu', event => event.preventDefault());
+  });
 
-.note { margin: 8px 0 0; font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
-.note.center { text-align: center; margin-top: 14px; }
+  window.addEventListener('pointerup', event => {
+    if (activePointerId === event.pointerId) stopMovement();
+  });
+  window.addEventListener('blur', () => { if (activeKey) stopMovement(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && activeKey) stopMovement();
+  });
+  window.addEventListener('pagehide', () => {
+    clearInterval(heartbeat);
+    if (activeKey) sendCommand('', true);
+  });
 
-.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
-.primary {
-  height: 46px;
-  padding: 0 22px;
-  font-weight: 600;
-  color: #06101d;
-  background: var(--accent);
-  border: 0;
-  border-radius: 10px;
-}
-.primary:disabled { opacity: 0.6; }
+  document.querySelector('#stop').addEventListener('pointerdown', event => {
+    event.preventDefault();
+    stopMovement();
+  });
+  document.querySelector('#saveAddress').addEventListener('click', () => {
+    try {
+      const address = baseUrl().replace(/^http:\/\//i, '');
+      addressInput.value = address;
+      localStorage.setItem('rcCarAddress', address);
+      stopMovement();
+      setStatus('Address saved · stop sent', true);
+    } catch (error) {
+      setStatus(error.message);
+    }
+  });
+  speedInput.addEventListener('input', () => {
+    speedValue.value = speedInput.value;
+    speedValue.textContent = speedInput.value;
+    sendCommand(activeKey);
+  });
 
-.status { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--bad); }
-.status .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
-.status[data-state="connected"] { color: var(--ok); }
+  document.addEventListener('keydown', event => {
+    if (event.target instanceof HTMLInputElement) return;
+    const keys = {
+      ArrowUp: 'f', w: 'f', W: 'f', ArrowDown: 'b', s: 'b', S: 'b',
+      ArrowLeft: 'l', a: 'l', A: 'l', ArrowRight: 'r', d: 'r', D: 'r',
+      q: 'gl', Q: 'gl', e: 'gr', E: 'gr'
+    };
+    if (event.code === 'Space') {
+      event.preventDefault();
+      stopMovement();
+      return;
+    }
+    const key = keys[event.key];
+    if (key) {
+      event.preventDefault();
+      startMovement(key, null, null);
+    }
+  });
+  document.addEventListener('keyup', event => {
+    if (activePointerId === null && activeKey) stopMovement();
+  });
 
-.message { margin: 10px 0 0; min-height: 1.2em; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
-.message.error { color: var(--bad); }
-
-/* Direction pad */
-.pad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 84px);
-  gap: 10px;
-  max-width: 340px;
-  margin: 0 auto;
-}
-.pad-f { grid-area: 1 / 2; }
-.pad-l { grid-area: 2 / 1; }
-.pad-s { grid-area: 2 / 2; }
-.pad-r { grid-area: 2 / 3; }
-.pad-b { grid-area: 3 / 2; }
-
-.pad button {
-  border-radius: 12px;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: none;
-}
-.dir { font-size: 2rem; background: #1e2b3d; border: 1px solid var(--line); }
-.dir.is-active { background: var(--accent); border-color: var(--accent); color: #06101d; }
-.stop {
-  background: var(--bad);
-  border: 1px solid var(--bad);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #fff;
-}
-.stop:active { filter: brightness(0.85); }
-.pad button:disabled { opacity: 0.4; }
-
-/* Separate spin-turn controls */
-.gturns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  max-width: 340px;
-  margin: 12px auto 0;
-}
-.gturn {
-  min-height: 48px;
-  padding: 8px;
-  font-size: 0.95rem;
-}
-
-/* Speed */
-.speed { display: flex; align-items: center; gap: 14px; }
-.speed input[type="range"] { flex: 1; height: 40px; margin: 0; accent-color: var(--accent); touch-action: pan-y; }
-.speed output { flex: none; min-width: 3.2ch; text-align: right; font-size: 1.4rem; font-weight: 700; }
-
-@media (min-width: 700px) {
-  .app { padding-top: 32px; }
-  .pad { grid-template-rows: repeat(3, 92px); }
-}
+  document.querySelector('#stop').addEventListener('click', event => {
+    // Pointer presses already stop immediately; keep click for keyboard activation.
+    if (event.detail === 0) stopMovement();
+  });
+  speedValue.textContent = speedInput.value;
+  setStatus('Ready · connect to College-RC-Car', false);
+})();
